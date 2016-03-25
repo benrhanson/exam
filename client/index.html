@@ -1,0 +1,210 @@
+<html ng-app = 'testApp'>
+<head>
+  <title>MEAN Exam</title>
+  <script type="text/javascript" src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular.js">
+  </script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular-route.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular-cookies.js"></script>
+
+  <!-- App Controllers and Factories -->
+
+  <script type="text/javascript">
+    var testApp = angular.module('testApp', ['ngRoute', 'ngCookies']);
+
+     testApp.config(function($routeProvider){
+      $routeProvider
+      .when('/', {
+        templateUrl: '/views/start.html'
+      })
+
+      .when('/appointment', {
+        templateUrl: '/views/appointment.html'
+      })
+
+      .when('/create', {
+        templateUrl: '/views/create.html'
+      })
+
+      .otherwise({
+        redirectTo: '/'
+      })
+     })    
+
+     //Factory handles user registration, login and logout
+
+     testApp.factory('patientFactory', function($http, $cookies){
+
+      var factory = {};
+
+      //verifies that the patient has provided a valid name, and sees whether they already exist in the database. If they are, it simply logs in the user and redirects to the appointment page.
+
+      factory.checkPatient = function(data, callback){
+        var lenError = 'Your name must have more than two characters.';
+        var uniqueError = 'That name is already being used by another patient. Consider a nickname or using your full name';
+        var error = '';
+        var name = data;
+
+        if(data.name.length <= 2){
+          error = lenError;
+        }
+        else{
+          $http.post('checkPatient', name).success(function(output){
+            if(output){
+              error = uniqueError;
+            }
+          })
+        }
+        callback(error);
+      }
+
+      factory.addPatient = function(data, callback){
+        $http.post('addPatient', data).success(function(output){
+          callback();
+        })      
+      }
+
+      return factory;
+     
+     })
+
+    //Factory handles the creation and deletion of appointments
+
+    testApp.factory('appointmentFactory', function($http, $cookies){
+      var factory = {};
+      var error = '';
+      var output = {}
+
+      //gathers all appointments from the database
+
+      factory.getAppointment = function(callback){
+        $http.get('getAppointment').success(function(output){
+          callback(output);
+        })
+      }
+
+      //deletes appointments
+      factory.deleteAppointment = function(data, callback){
+        var info = {data};
+        $http.post('deleteAppointment', info).success(function(output){
+          callback();
+        })
+      }
+
+      //verifies data and makes the appointment
+      factory.makeAppointment = function(data, callback){
+        if(!data.day || !data.time || data.reason.length < 10){
+          output.error = 'Make sure that your appointment includes a time, date and at least 10 characters of explanation.'
+          callback(output.error);
+        }
+        else if(data.day < new Date()){
+          output.error = 'You cannot set appointments in the past.';
+          callback(output.error);
+        }
+        //need to make sure times can't be outside of business hours
+        else{
+        $http.post('makeAppointment', data).success(function(output){
+          if(output == 'You cannot have two appointments on the same day.')
+          {
+            callback(output);
+          }
+          else{
+            callback();
+          }
+        })    
+        }
+
+      }
+
+      return factory;
+    })
+
+     //Controller handles user registration, login and logout
+
+     testApp.controller('patientController', function($scope, $cookies, patientFactory, $location){
+      //variables for controlling which patient is presently logged in and gives data to the scope so user name can be on the page.
+      var currentPatient = $cookies.get('patient');
+      $scope.currentPatient = currentPatient;
+      var bouncer = $cookies.get('error');
+
+
+      //adds user to the database after checking to make sure they don't already exist in the database
+      $scope.addPatient = function(data){
+        var name = data;
+        patientFactory.checkPatient(data, function(data){
+          if(data){
+            $scope.error = data;
+          }
+          else{
+            patientFactory.addPatient(name, function(data){
+              console.log(name.name);
+              $cookies.remove('patient');
+              $cookies.put('patient', name.name);
+              console.log($cookies.get('patient'));
+              $location.path('/appointment');
+            })   
+          }
+        })
+      }
+
+      //logs off customer by removing their name from the cookie and sending them back to the home page
+      $scope.logOut = function(){
+        $cookies.remove('patient');
+        $location.path('/');
+      }
+     })
+
+    //handles the creation and deletion of appointments
+    testApp.controller('appointmentController', function($scope, $cookies, appointmentFactory, $location){
+      var patient = $cookies.get('patient');
+      if(!patient){
+        $location.path('/start');
+      }
+      $scope.patient = $cookies.get('patient');
+
+      appointmentFactory.getAppointment(function(data){
+        $scope.appointments = data;
+      })
+
+      //creates a new appointment
+      $scope.makeAppointment = function(data){
+        if(!data){
+          $scope.error = 'You left the appointment card blank. Please fill out all of the information.';
+        }
+        else{
+          data.name = patient;
+          appointmentFactory.makeAppointment(data, function(data){
+          if(data){
+            console.log(data);
+            $scope.error = data;
+            $scope.newAppt = {};
+          }
+          else{
+           $location.path('/appointment'); 
+          }
+        }) 
+        }
+
+
+      }
+      //deletes an appointment
+      $scope.deleteAppointment = function(data){
+        appointmentFactory.deleteAppointment(data, function(){
+          appointmentFactory.getAppointment(function(data){
+            $scope.appointments = data;
+          })
+        })
+      }
+
+    })
+
+  </script>
+
+</head>
+<body>
+  <div ng-controller = 'patientController'>
+    <button ng-click = 'logOut()'>Log Out</button>
+  </div>
+
+  <div ng-view = ''></div>
+</body>
+</html>

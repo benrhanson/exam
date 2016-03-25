@@ -1,0 +1,10 @@
+<div ng-controller = 'patientController'>
+<h1>Welcome to Dr. Hanson's Office!</h1>
+<h4>To schedule an appointment, please tell us your name.</h4>
+	<form>
+		Your Name: <input type = 'text' placeholder = 'enter your name here' ng-model = 'newPatient.name'>
+		<input type = 'submit' value = 'Enter' ng-click = 'addPatient(newPatient)'>
+	</form>
+{{error}}
+
+</div>

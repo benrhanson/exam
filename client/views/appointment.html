@@ -1,0 +1,36 @@
+<div ng-controller = 'appointmentController'>
+
+<h1>Dr. Hanson's Appointments</h1>
+<h5>Welcome, {{patient}}!</h5>
+
+{{error}}
+<!-- Table goes here -->
+<h4>Filter: <input type = 'text' ng-model = 'filter_name' placeholder: 'Search polls here'></h4>
+<table>
+	
+	<thead>
+		<th>Date</th>
+		<th>Time</th>
+		<th>Patient Name</th>
+		<th>Complaint</th>
+		<th>Delete Your Appointments</th>
+	</thead>
+
+	<tbody>
+		<tr ng-repeat = 'item in appointments| filter: filter_name'>
+			<td>{{item.day|date}}</td>
+			<td>{{item.time}}</td>
+			<td>{{item.patient}}</td>
+			<td>{{item.reason}}</td>
+			<td ng-if = "patient == item.patient"><button ng-click = 'deleteAppointment(item._id)'>Delete</button></td>
+		</tr>
+	</tbody>	
+
+
+</table>
+
+<!-- Use date:medium when formatting the posted date -->
+
+<a href="#/create">Schedule an Appointment</a>
+	
+</div>

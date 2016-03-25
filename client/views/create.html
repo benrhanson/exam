@@ -1,0 +1,17 @@
+<div ng-controller = 'appointmentController'>
+
+<h1>Schedule a New Appointment, {{patient}}</h1>
+
+<!-- Needs: ability to specify a day and time, no more than three patients on a particular day, flash error messages if anything is missing. -->
+
+<form>
+	<input type = 'date' ng-model = 'newAppt.day'>
+	<input type = 'time' ng-model = 'newAppt.time'>
+	<br>
+	<textarea rows = 10 cols = 30 placeholder = 'Please describe your problem here' ng-model = 'newAppt.reason'></textarea>
+	<input type = 'submit' value = 'Make Appointment' ng-click = 'makeAppointment(newAppt)'>
+</form>
+<button><a href="/#appointment">Cancel and Go Back</a></button>
+{{error}}
+
+</div>
